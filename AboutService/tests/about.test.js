@@ -17,7 +17,7 @@ jest.mock('../models/logs', () => ({
 const app = require('../app');
 
 // Expected team members based on the hardcoded values in routes/about.js
-const EXPECTED_MEMBERS = [
+const expectedMembers = [
     { first_name: 'Ofek', last_name: 'Dahari' },
     { first_name: 'Ben', last_name: 'Abraham' },
     { first_name: 'Asaf', last_name: 'Zusman' }
@@ -54,7 +54,7 @@ describe('GET /api/about', () => {
     // Verify the correct team member names are returned
     it('should return the correct team member names', async () => {
         const res = await request(app).get('/api/about');
-        expect(res.body).toEqual(EXPECTED_MEMBERS);
+        expect(res.body).toEqual(expectedMembers);
     });
 
     // Verify the response content type is JSON
