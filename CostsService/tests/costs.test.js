@@ -103,6 +103,60 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('missing_fields');
     });
 
+    it('should return status 400 when description is not a string', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 123, category: 'food', userid: 123123, sum: 30 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    it('should return status 400 when category is not a string', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 99, userid: 123123, sum: 30 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    it('should return status 400 when userid is not a number', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', userid: 'abc', sum: 30 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    it('should return status 400 when sum is not a number', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', userid: 123123, sum: 'abc' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    it('should return status 400 when date is not a string', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', userid: 123123, sum: 30, date: 12345678 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    it('should return status 400 when an invalid date format is provided', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'bad date', category: 'food', userid: 123123, sum: 10, date: 'not-a-date' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
     it('should return status 400 when the category is invalid', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -167,6 +221,7 @@ describe('POST /api/add', () => {
 
         expect(res.status).toBe(201);
     });
+
 
     it('should return content-type JSON', async () => {
         const res = await request(app)

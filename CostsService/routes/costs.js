@@ -24,14 +24,33 @@ const userExists = async (userId) => {
  * Optionally accepts a date — if not provided, the server time is used.
  */
 router.post('/add', async (req, res) => {
+    // Capture the request received time immediately, before any async work
+    const receivedAt = new Date();
+
     // Extract fields from the request body
     const { description, category, userid, sum, date } = req.body;
 
     // Validate that all required fields are present
-    if (!description || !category || !userid || sum === undefined) {
+    if (!description || !category || userid === undefined || sum === undefined) {
         return res.status(400).json({
             id: 'missing_fields',
             message: 'description, category, userid and sum are all required'
+        });
+    }
+
+    // Validate that each field is of the correct type, and that date (if provided) is parseable
+    const typeErrors =
+        typeof description !== 'string' ||
+        typeof category !== 'string' ||
+        typeof userid !== 'number' ||
+        typeof sum !== 'number' ||
+        (date !== undefined && typeof date !== 'string') ||
+        (date !== undefined && isNaN(new Date(date).getTime()));
+
+    if (typeErrors) {
+        return res.status(400).json({
+            id: 'validation_error',
+            message: 'one or more fields are not valid'
         });
     }
 
@@ -61,9 +80,15 @@ router.post('/add', async (req, res) => {
             sum: Number(sum)
         };
 
+        // Use the request received time if no date was provided by the client
+        if (!date) {
+            costData.date = receivedAt;
+        }
+
         // Only set date explicitly if the client provided one, otherwise default is set to current server time
         if (date) {
             const providedDate = new Date(date);
+
             // Reject any date that belongs to the past
             if (providedDate < new Date()) {
                 return res.status(400).json({
