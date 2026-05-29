@@ -3,10 +3,17 @@ const express = require('express');
 const mongoose = require('mongoose');
 const pino = require('pino');
 const costsRouter = require('./routes/costs');
-const Log = require('./models/logs');
+const MongoLogStream = require('./mongoLogStream');
 
-// Initialise the Pino logger for structured console output
-const logger = pino({ level: 'info' });
+// Create a Pino logger that writes directly to MongoDB via MongoLogStream
+const logger = pino(
+    {
+        level: 'info',
+        timestamp: pino.stdTimeFunctions.isoTime,
+        base: { service: 'CostsService' }
+    },
+    new MongoLogStream()
+);
 
 const app = express();
 
@@ -14,25 +21,36 @@ const app = express();
 app.use(express.json());
 
 /**
+ * Logs the HTTP request details to MongoDB after the response is sent.
+ * Captures the status code which is only available after the response.
+ * @param {object} req - The Express request object.
+ * @param {number} statusCode - The HTTP status code of the response.
+ */
+const logRequest = (req, statusCode) => {
+    // Determine log level based on the HTTP status code
+    const level = statusCode >= 400 ? 'error' : 'info';
+
+    // Log the full request details including the status code
+    logger[level]({ method: req.method, endpoint: req.originalUrl, statusCode });
+};
+
+/**
  * Logging middleware — runs on every incoming HTTP request.
- * Writes a log entry to both the console (via Pino) and MongoDB.
+ * Logs endpoint access immediately, then logs the full request after the response is sent.
  * @param {object} req - The Express request object.
  * @param {object} res - The Express response object.
  * @param {Function} next - Calls the next middleware in the chain.
  */
-app.use(async (req, res, next) => {
-    const message = `${req.method} ${req.originalUrl}`;
+app.use((req, res, next) => {
+    // Log endpoint access immediately when the request arrives
+    logger.info({ endpoint: req.originalUrl }, 'HTTP request received');
 
-    // Log to console using Pino
-    logger.info(message);
-
-    try {
-        // Save the log entry to the MongoDB logs collection
-        await Log.create({ level: 'info', message, endpoint: req.originalUrl });
-    } catch (logError) {
-        // Log the error but do not block the request if saving fails
-        logger.error(`Failed to save log to DB: ${logError.message}`);
-    }
+    // Log full request details only when a valid route was matched
+    res.on('finish', () => {
+        if (req.route) {
+            logRequest(req, res.statusCode);
+        }
+    });
 
     next();
 });
@@ -53,14 +71,19 @@ const startServer = async () => {
         // Start listening for incoming requests on the configured port
         const port = Number(process.env.PORT);
         app.listen(port, () => {
-            logger.info(`CostsService running on port ${port}`);
+            logger.info({ port }, 'CostsService is running');
         });
 
     } catch (error) {
         // If the DB connection fails, log the error and exit the process
-        logger.error(`Failed to connect to MongoDB: ${error.message}`);
+        logger.error({ err: error.message }, 'Failed to connect to MongoDB');
         process.exit(1);
     }
 };
 
-startServer();
+// Only start the server when this file is run directly, not when imported by tests
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = app;
