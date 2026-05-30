@@ -5,7 +5,7 @@ const User = require('../models/users');
 const Report = require('../models/reports');
 
 // The valid categories as defined in the project requirements
-const VALID_CATEGORIES = ['food', 'health', 'housing', 'sports', 'education'];
+const VALID_CATEGORIES = ['food', 'education', 'health', 'housing', 'sports'];
 
 /**
  * Checks whether a user with the given id exists in the database.
@@ -101,7 +101,15 @@ router.post('/add', async (req, res) => {
 
         // Save the new cost item to the database
         const newCost = await Costs.create(costData);
-        res.status(201).json(newCost);
+
+        // Return only the relevant fields, excluding internal Mongoose fields
+        res.status(201).json({
+            description: newCost.description,
+            category: newCost.category,
+            userid: newCost.userid,
+            sum: newCost.sum,
+            date: newCost.date
+        });
 
     } catch (error) {
         res.status(500).json({ id: 'server_error', message: error.message });
@@ -188,6 +196,20 @@ router.get('/report', async (req, res) => {
     const userId = Number(id);
     const yearNum = Number(year);
     const monthNum = Number(month);
+
+    // Validate that all parameters are valid numbers, year and month are integers, and month is within range
+    const paramsInvalid =
+        isNaN(userId) ||
+        isNaN(yearNum) || !Number.isInteger(yearNum) ||
+        isNaN(monthNum) || !Number.isInteger(monthNum) ||
+        monthNum < 1 || monthNum > 12;
+
+    if (paramsInvalid) {
+        return res.status(400).json({
+            id: 'validation_error',
+            message: 'one or more fields are not valid'
+        });
+    }
 
     try {
         /*

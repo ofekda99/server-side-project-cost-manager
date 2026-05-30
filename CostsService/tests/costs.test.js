@@ -68,6 +68,7 @@ describe('POST /api/add', () => {
         });
     });
 
+    // Happy path — valid request should create the cost and return 201
     it('should return status 201 when a valid cost is added', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -76,6 +77,7 @@ describe('POST /api/add', () => {
         expect(res.status).toBe(201);
     });
 
+    // The response body should contain all the saved cost fields
     it('should return the saved cost document on success', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -87,6 +89,7 @@ describe('POST /api/add', () => {
         expect(res.body).toHaveProperty('sum');
     });
 
+    // Missing required fields should return 400 with missing_fields error id
     it('should return status 400 when required fields are missing', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -103,6 +106,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('missing_fields');
     });
 
+    // Type validation — each field sent with the wrong type should return validation_error
     it('should return status 400 when description is not a string', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -148,6 +152,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('validation_error');
     });
 
+    // Date format validation — unparseable date string should return validation_error
     it('should return status 400 when an invalid date format is provided', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -157,6 +162,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('validation_error');
     });
 
+    // Category value validation — must be one of the 5 allowed values
     it('should return status 400 when the category is invalid', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -173,6 +179,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_category');
     });
 
+    // User existence validation — userid must exist in the database
     it('should return status 404 when the user does not exist', async () => {
         // Override: user not found for this test only
         mockUserFindOne.mockResolvedValue(null);
@@ -194,6 +201,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('user_not_found');
     });
 
+    // Past date validation — dates in the past must be rejected
     it('should return status 400 when a past date is provided', async () => {
         const pastDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -214,6 +222,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_date');
     });
 
+    // A valid future date should be accepted without error
     it('should accept a valid future date without error', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -222,7 +231,7 @@ describe('POST /api/add', () => {
         expect(res.status).toBe(201);
     });
 
-
+    // Response headers should always indicate JSON content
     it('should return content-type JSON', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -231,6 +240,7 @@ describe('POST /api/add', () => {
         expect(res.headers['content-type']).toMatch(/json/);
     });
 
+    // All 5 valid categories should be accepted
     it('should accept all 5 valid categories', async () => {
         const categories = ['food', 'health', 'housing', 'sports', 'education'];
 
@@ -255,6 +265,7 @@ describe('GET /api/report', () => {
         mockCostsFind.mockResolvedValue([]);
     });
 
+    // Happy path — valid request should return 200
     it('should return status 200 for a valid report request', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -263,6 +274,73 @@ describe('GET /api/report', () => {
         expect(res.status).toBe(200);
     });
 
+    // Parameter content validation — non-numeric values should be rejected
+    it('should return status 400 when id is not a number', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 'abc', year: 2025, month: 1 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    it('should return status 400 when year is not a number', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 'abc', month: 1 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    it('should return status 400 when month is not a number', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 2025, month: 'abc' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    // Month range validation — must be between 1 and 12
+    it('should return status 400 when month is below 1', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 2025, month: 0 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    it('should return status 400 when month is above 12', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 2025, month: 13 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    // Integer validation — decimal values for month and year should be rejected
+    it('should return status 400 when month is a decimal', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 2025, month: 3.5 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    it('should return status 400 when year is a decimal', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 2025.5, month: 1 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('validation_error');
+    });
+
+    // Missing parameters should return 400 with missing_params error id
     it('should return status 400 when query parameters are missing', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -279,6 +357,7 @@ describe('GET /api/report', () => {
         expect(res.body.id).toBe('missing_params');
     });
 
+    // Response shape — should always include these 4 fields
     it('should return a report object with userid, year, month and costs fields', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -290,6 +369,7 @@ describe('GET /api/report', () => {
         expect(res.body).toHaveProperty('costs');
     });
 
+    // Costs structure — must be an array with exactly 5 category groups
     it('should return costs as an array', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -320,6 +400,7 @@ describe('GET /api/report', () => {
         expect(categoryKeys).toContain('education');
     });
 
+    // Data integrity — returned values should match what was requested
     it('should return the correct userid in the response', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -337,6 +418,7 @@ describe('GET /api/report', () => {
         expect(res.body.month).toBe(3);
     });
 
+    // Response headers should always indicate JSON content
     it('should return content-type JSON', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -345,6 +427,7 @@ describe('GET /api/report', () => {
         expect(res.headers['content-type']).toMatch(/json/);
     });
 
+    // Computed Design Pattern — past month reports should be served from cache
     it('should serve a cached report for a past month when one exists', async () => {
         // Provide a pre-existing cached report
         const cachedCosts = [
@@ -371,6 +454,7 @@ describe('GET /api/report', () => {
         expect(mockReportCreate).not.toHaveBeenCalled();
     });
 
+    // Computed Design Pattern — uncached past month should be computed and saved
     it('should save a new report to the cache for a past month with no cached entry', async () => {
         // No cache — Report.create should be called once
         mockReportFindOne.mockResolvedValue(null);
@@ -382,6 +466,7 @@ describe('GET /api/report', () => {
         expect(mockReportCreate).toHaveBeenCalledTimes(1);
     });
 
+    // Computed Design Pattern — current and future months must never be cached
     it('should NOT cache a report for the current or future month', async () => {
         const now = new Date();
         const currentYear = now.getFullYear();
