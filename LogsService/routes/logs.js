@@ -8,8 +8,8 @@ const Log = require('../models/logs');
  */
 router.get('/logs', async (req, res) => {
     try {
-        // Sort by timestamp descending to show the most recent logs first
-        const logs = await Log.find().sort({ timestamp: -1 });
+        // Sort by timestamp descending and exclude internal Mongoose fields
+        const logs = await Log.find().sort({ timestamp: -1 }).select('-_id -__v');
         res.status(200).json(logs);
     } catch (error) {
         res.status(500).json({ id: 'server_error', message: error.message });
