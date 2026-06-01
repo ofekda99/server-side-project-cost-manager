@@ -3,10 +3,17 @@ const express = require('express');
 const mongoose = require('mongoose');
 const pino = require('pino');
 const usersRouter = require('./routes/users');
-const Log = require('./models/logs');
+const MongoLogStream = require('./mongo_log_stream');
 
-// Initialise the Pino logger for structured console output
-const logger = pino({ level: 'info' });
+// Create a Pino logger that writes to MongoDB via MongoLogStream
+const logger = pino(
+    {
+        level: 'info',
+        timestamp: pino.stdTimeFunctions.isoTime,
+        base: { service: 'UsersService' }
+    },
+    new MongoLogStream()
+);
 
 const app = express();
 
@@ -14,42 +21,36 @@ const app = express();
 app.use(express.json());
 
 /**
- * Saves a log entry to the MongoDB logs collection after the response is sent.
+ * Logs the HTTP request details to MongoDB after the response is sent.
+ * Captures the status code which is only available after the response.
  * @param {object} req - The Express request object.
  * @param {number} statusCode - The HTTP status code of the response.
  */
-const logRequest = async (req, statusCode) => {
+const logRequest = (req, statusCode) => {
     // Determine log level based on the HTTP status code
     const level = statusCode >= 400 ? 'error' : 'info';
 
-    try {
-        // Save the log entry with full request and response details
-        await Log.create({
-            level,
-            method: req.method,
-            endpoint: req.originalUrl,
-            statusCode,
-            service: 'UsersService'
-        });
-    } catch (logError) {
-        // Log the error but do not block the request if saving fails
-        logger.error(`Failed to save log to DB: ${logError.message}`);
-    }
+    // Log the full request details including the status code
+    logger[level]({ method: req.method, endpoint: req.originalUrl, statusCode });
 };
 
 /**
  * Logging middleware — runs on every incoming HTTP request.
- * Logs to console immediately, then saves to MongoDB after the response is sent.
+ * Logs endpoint access immediately, then logs the full request after the response is sent.
  * @param {object} req - The Express request object.
  * @param {object} res - The Express response object.
  * @param {Function} next - Calls the next middleware in the chain.
  */
 app.use((req, res, next) => {
-    // Log to console immediately when the request arrives
-    logger.info(`${req.method} ${req.originalUrl}`);
+    // Log endpoint access immediately when the request arrives
+    logger.info({ endpoint: req.originalUrl }, 'HTTP request received');
 
-    // Save to MongoDB after the response is finished to capture the status code
-    res.on('finish', () => logRequest(req, res.statusCode));
+    // Log full request details only when a valid route was matched
+    res.on('finish', () => {
+        if (req.route) {
+            logRequest(req, res.statusCode);
+        }
+    });
 
     next();
 });
@@ -70,12 +71,12 @@ const startServer = async () => {
         // Start listening for incoming requests on the configured port
         const port = Number(process.env.PORT);
         app.listen(port, () => {
-            logger.info(`UsersService running on port ${port}`);
+            logger.info({ port }, 'UsersService is running');
         });
 
     } catch (error) {
         // If the DB connection fails, log the error and exit the process
-        logger.error(`Failed to connect to MongoDB: ${error.message}`);
+        logger.error({ err: error.message }, 'Failed to connect to MongoDB');
         process.exit(1);
     }
 };
