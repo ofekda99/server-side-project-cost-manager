@@ -89,120 +89,164 @@ describe('POST /api/add', () => {
         expect(res.body).toHaveProperty('sum');
     });
 
-    // Missing required fields should return 400 with missing_fields error id
-    it('should return status 400 when required fields are missing', async () => {
+    // Each required field missing individually should return its specific error id
+    it('should return missing_description when description is absent', async () => {
         const res = await request(app)
             .post('/api/add')
-            .send({ description: 'lunch', category: 'food' });
+            .send({ category: 'food', userid: 123123, sum: 30 });
 
         expect(res.status).toBe(400);
+        expect(res.body.id).toBe('missing_description');
     });
 
-    it('should return id "missing_fields" when required fields are absent', async () => {
+    it('should return missing_category when category is absent', async () => {
         const res = await request(app)
             .post('/api/add')
-            .send({ description: 'lunch' });
+            .send({ description: 'lunch', userid: 123123, sum: 30 });
 
-        expect(res.body.id).toBe('missing_fields');
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('missing_category');
     });
 
-    // Type validation — each field sent with the wrong type should return validation_error
-    it('should return status 400 when description is not a string', async () => {
+    it('should return missing_userid when userid is absent', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', sum: 30 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('missing_userid');
+    });
+
+    it('should return missing_sum when sum is absent', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', userid: 123123 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('missing_sum');
+    });
+
+    // Type validation — each field sent with the wrong type should return its specific error id
+    it('should return invalid_description when description is not a string', async () => {
         const res = await request(app)
             .post('/api/add')
             .send({ description: 123, category: 'food', userid: 123123, sum: 30 });
 
         expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
+        expect(res.body.id).toBe('invalid_description');
     });
 
-    it('should return status 400 when category is not a string', async () => {
+    it('should return invalid_description when description is an empty string', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: '   ', category: 'food', userid: 123123, sum: 30 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_description');
+    });
+
+    it('should return invalid_category when category is not a string', async () => {
         const res = await request(app)
             .post('/api/add')
             .send({ description: 'lunch', category: 99, userid: 123123, sum: 30 });
 
         expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
+        expect(res.body.id).toBe('invalid_category');
     });
 
-    it('should return status 400 when userid is not a number', async () => {
+    it('should return invalid_category when category is not one of the allowed values', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'cars', userid: 123123, sum: 30 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_category');
+    });
+
+    it('should return invalid_userid when userid is not a number', async () => {
         const res = await request(app)
             .post('/api/add')
             .send({ description: 'lunch', category: 'food', userid: 'abc', sum: 30 });
 
         expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
+        expect(res.body.id).toBe('invalid_userid');
     });
 
-    it('should return status 400 when sum is not a number', async () => {
+    it('should return invalid_userid when userid is NaN', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', userid: NaN, sum: 30 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_userid');
+    });
+
+    it('should return invalid_userid when userid is a decimal', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', userid: 123.5, sum: 30 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_userid');
+    });
+
+    it('should return invalid_userid when userid is negative', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', userid: -1, sum: 30 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_userid');
+    });
+
+    it('should return invalid_sum when sum is not a number', async () => {
         const res = await request(app)
             .post('/api/add')
             .send({ description: 'lunch', category: 'food', userid: 123123, sum: 'abc' });
 
         expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
+        expect(res.body.id).toBe('invalid_sum');
     });
 
-    it('should return status 400 when date is not a string', async () => {
+    it('should return invalid_sum when sum is NaN', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', userid: 123123, sum: NaN });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_sum');
+    });
+
+    it('should return invalid_sum when sum is zero or negative', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', userid: 123123, sum: -10 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_sum');
+    });
+
+    it('should return invalid_date when date is not a string', async () => {
         const res = await request(app)
             .post('/api/add')
             .send({ description: 'lunch', category: 'food', userid: 123123, sum: 30, date: 12345678 });
 
         expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
+        expect(res.body.id).toBe('invalid_date');
     });
 
-    // Date format validation — unparseable date string should return validation_error
-    it('should return status 400 when an invalid date format is provided', async () => {
+    // Date format validation — unparseable date string should return invalid_date
+    it('should return invalid_date when date format is not parseable', async () => {
         const res = await request(app)
             .post('/api/add')
             .send({ description: 'bad date', category: 'food', userid: 123123, sum: 10, date: 'not-a-date' });
 
         expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
-    });
-
-    // Category value validation — must be one of the 5 allowed values
-    it('should return status 400 when the category is invalid', async () => {
-        const res = await request(app)
-            .post('/api/add')
-            .send({ description: 'test', category: 'invalid_cat', userid: 123123, sum: 10 });
-
-        expect(res.status).toBe(400);
-    });
-
-    it('should return id "invalid_category" when the category is not allowed', async () => {
-        const res = await request(app)
-            .post('/api/add')
-            .send({ description: 'test', category: 'cars', userid: 123123, sum: 10 });
-
-        expect(res.body.id).toBe('invalid_category');
-    });
-
-    // User existence validation — userid must exist in the database
-    it('should return status 404 when the user does not exist', async () => {
-        // Override: user not found for this test only
-        mockUserFindOne.mockResolvedValue(null);
-
-        const res = await request(app)
-            .post('/api/add')
-            .send({ description: 'lunch', category: 'food', userid: 999999, sum: 30 });
-
-        expect(res.status).toBe(404);
-    });
-
-    it('should return id "user_not_found" when the user is missing', async () => {
-        mockUserFindOne.mockResolvedValue(null);
-
-        const res = await request(app)
-            .post('/api/add')
-            .send({ description: 'lunch', category: 'food', userid: 999999, sum: 30 });
-
-        expect(res.body.id).toBe('user_not_found');
+        expect(res.body.id).toBe('invalid_date');
     });
 
     // Past date validation — dates in the past must be rejected
-    it('should return status 400 when a past date is provided', async () => {
+    it('should return invalid_date when a past date is provided', async () => {
         const pastDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
         const res = await request(app)
@@ -210,15 +254,6 @@ describe('POST /api/add', () => {
             .send({ description: 'old item', category: 'health', userid: 123123, sum: 20, date: pastDate });
 
         expect(res.status).toBe(400);
-    });
-
-    it('should return id "invalid_date" when a past date is provided', async () => {
-        const pastDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-        const res = await request(app)
-            .post('/api/add')
-            .send({ description: 'old item', category: 'health', userid: 123123, sum: 20, date: pastDate });
-
         expect(res.body.id).toBe('invalid_date');
     });
 
@@ -229,6 +264,18 @@ describe('POST /api/add', () => {
             .send({ description: 'future item', category: 'sports', userid: 123123, sum: 15, date: futureDate });
 
         expect(res.status).toBe(201);
+    });
+
+    // User existence validation — userid must exist in the database
+    it('should return user_not_found when the user does not exist', async () => {
+        mockUserFindOne.mockResolvedValue(null);
+
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', userid: 999999, sum: 30 });
+
+        expect(res.status).toBe(404);
+        expect(res.body.id).toBe('user_not_found');
     });
 
     // Response headers should always indicate JSON content
@@ -274,87 +321,124 @@ describe('GET /api/report', () => {
         expect(res.status).toBe(200);
     });
 
-    // Parameter content validation — non-numeric values should be rejected
-    it('should return status 400 when id is not a number', async () => {
+    // Each missing parameter should return its specific error id
+    it('should return missing_id when id is absent', async () => {
         const res = await request(app)
             .get('/api/report')
-            .query({ id: 'abc', year: 2025, month: 1 });
+            .query({ year: 2025, month: 1 });
 
         expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
+        expect(res.body.id).toBe('missing_id');
     });
 
-    it('should return status 400 when year is not a number', async () => {
+    it('should return missing_year when year is absent', async () => {
         const res = await request(app)
             .get('/api/report')
-            .query({ id: 123123, year: 'abc', month: 1 });
+            .query({ id: 123123, month: 1 });
 
         expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
+        expect(res.body.id).toBe('missing_year');
     });
 
-    it('should return status 400 when month is not a number', async () => {
-        const res = await request(app)
-            .get('/api/report')
-            .query({ id: 123123, year: 2025, month: 'abc' });
-
-        expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
-    });
-
-    // Month range validation — must be between 1 and 12
-    it('should return status 400 when month is below 1', async () => {
-        const res = await request(app)
-            .get('/api/report')
-            .query({ id: 123123, year: 2025, month: 0 });
-
-        expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
-    });
-
-    it('should return status 400 when month is above 12', async () => {
-        const res = await request(app)
-            .get('/api/report')
-            .query({ id: 123123, year: 2025, month: 13 });
-
-        expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
-    });
-
-    // Integer validation — decimal values for month and year should be rejected
-    it('should return status 400 when month is a decimal', async () => {
-        const res = await request(app)
-            .get('/api/report')
-            .query({ id: 123123, year: 2025, month: 3.5 });
-
-        expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
-    });
-
-    it('should return status 400 when year is a decimal', async () => {
-        const res = await request(app)
-            .get('/api/report')
-            .query({ id: 123123, year: 2025.5, month: 1 });
-
-        expect(res.status).toBe(400);
-        expect(res.body.id).toBe('validation_error');
-    });
-
-    // Missing parameters should return 400 with missing_params error id
-    it('should return status 400 when query parameters are missing', async () => {
+    it('should return missing_month when month is absent', async () => {
         const res = await request(app)
             .get('/api/report')
             .query({ id: 123123, year: 2025 });
 
         expect(res.status).toBe(400);
+        expect(res.body.id).toBe('missing_month');
     });
 
-    it('should return id "missing_params" when query parameters are absent', async () => {
+    // Parameter content validation — each invalid param should return its specific error id
+    it('should return invalid_id when id is not a number', async () => {
         const res = await request(app)
             .get('/api/report')
-            .query({ id: 123123 });
+            .query({ id: 'abc', year: 2025, month: 1 });
 
-        expect(res.body.id).toBe('missing_params');
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_id');
+    });
+
+    it('should return invalid_id when id is a decimal', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123.5, year: 2025, month: 1 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_id');
+    });
+
+    it('should return invalid_id when id is negative', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: -1, year: 2025, month: 1 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_id');
+    });
+
+    it('should return invalid_year when year is not a number', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 'abc', month: 1 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_year');
+    });
+
+    it('should return invalid_year when year is a decimal', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 2025.5, month: 1 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_year');
+    });
+
+    it('should return invalid_year when year is negative', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: -2025, month: 1 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_year');
+    });
+
+    it('should return invalid_month when month is not a number', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 2025, month: 'abc' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_month');
+    });
+
+    it('should return invalid_month when month is a decimal', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 2025, month: 3.5 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_month');
+    });
+
+    // Month range validation — must be between 1 and 12
+    it('should return invalid_month when month is below 1', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 2025, month: 0 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_month');
+    });
+
+    it('should return invalid_month when month is above 12', async () => {
+        const res = await request(app)
+            .get('/api/report')
+            .query({ id: 123123, year: 2025, month: 13 });
+
+        expect(res.status).toBe(400);
+        expect(res.body.id).toBe('invalid_month');
     });
 
     // Response shape — should always include these 4 fields
