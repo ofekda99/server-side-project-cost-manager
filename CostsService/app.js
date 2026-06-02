@@ -69,7 +69,7 @@ async function startServer() {
         logger.info('Connected to MongoDB');
 
         // Start listening for incoming requests on the configured port
-        const port = Number(process.env.PORT);
+        const port = Number(process.env.PORT) || 3002;
         app.listen(port, () => {
             logger.info({ port }, 'CostsService is running');
         });
