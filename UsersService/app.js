@@ -26,13 +26,13 @@ app.use(express.json());
  * @param {object} req - The Express request object.
  * @param {number} statusCode - The HTTP status code of the response.
  */
-const logRequest = (req, statusCode) => {
+function logRequest(req, statusCode) {
     // Determine log level based on the HTTP status code
     const level = statusCode >= 400 ? 'error' : 'info';
 
     // Log the full request details including the status code
     logger[level]({ method: req.method, endpoint: req.originalUrl, statusCode });
-};
+}
 
 /**
  * Logging middleware — runs on every incoming HTTP request.
@@ -62,7 +62,7 @@ app.use('/api', usersRouter);
  * Connects to MongoDB Atlas and starts the Express server.
  * The server only begins accepting requests once the DB connection is ready.
  */
-const startServer = async () => {
+async function startServer() {
     try {
         // Connect to MongoDB using the URI from the .env file
         await mongoose.connect(process.env.MONGODB_URI);
@@ -79,7 +79,7 @@ const startServer = async () => {
         logger.error({ err: error.message }, 'Failed to connect to MongoDB');
         process.exit(1);
     }
-};
+}
 
 // Only start the server when this file is run directly, not when imported by tests
 if (require.main === module) {

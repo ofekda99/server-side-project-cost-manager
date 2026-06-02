@@ -1,17 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const Users = require('../models/users');
-const Costs = require('../models/costs');
+const Users = require('../models/user.model');
+const Costs = require('../models/cost.model');
 
 /**
  * Retrieves a single user document by numeric id.
  * @param {number} userId - The numeric id to look up.
  * @returns {Promise<object>} The matching user document, or null if not found.
  */
-const getUserById = async (userId) => {
+async function getUserById(userId) {
     const user = await Users.findOne({ id: userId });
     return user;
-};
+}
 
 /**
  * GET /api/users
@@ -36,15 +36,9 @@ router.get('/users/:id', async (req, res) => {
     // Convert the URL param to a number for DB queries
     const userId = Number(req.params.id);
 
-    // id could not be converted to a number (e.g. 'abc')
-    if (isNaN(userId))
-        return res.status(400).json({ id: 'invalid_id', message: 'id must be a number' });
-    // id is a decimal such as 3.5 — only whole numbers are valid user ids
-    if (!Number.isInteger(userId))
-        return res.status(400).json({ id: 'invalid_id', message: 'id must be a whole number' });
-    // id is zero or negative — user ids must be positive
-    if (userId <= 0)
-        return res.status(400).json({ id: 'invalid_id', message: 'id must be a positive number' });
+    // id must be a whole positive number
+    if(isNaN(userId) || !Number.isInteger(userId) || userId <= 0)
+        return res.status(400).json({ id: 'invalid_id', message: 'id must be a whole positive number' });
 
     try {
         const user = await getUserById(userId);
@@ -79,58 +73,40 @@ router.get('/users/:id', async (req, res) => {
  * @param {object} body - The request body fields to validate.
  * @returns {object|null} An error object if validation fails, null if valid.
  */
-const validateUserInput = ({ id, first_name, last_name, birthday }) => {
+function validateUserInput({ id, first_name, last_name, birthday }) {
     // id was not included in the request body
     if (id === undefined)
         return { id: 'missing_id', message: 'id is required' };
-    // id must be a number, not a string like 'abc'
-    if (typeof id !== 'number')
-        return { id: 'invalid_id', message: 'id must be a number' };
-    // id is NaN — typeof NaN is 'number' so it slips past the type check
-    if (isNaN(id))
-        return { id: 'invalid_id', message: 'id must be a valid number' };
-    // id is a decimal such as 3.5 — user ids must be whole numbers
-    if (!Number.isInteger(id))
-        return { id: 'invalid_id', message: 'id must be a whole number' };
-    // id is zero or negative — user ids must be positive
-    if (id <= 0)
-        return { id: 'invalid_id', message: 'id must be a positive number' };
+    // id must be a whole positive number
+    if(typeof id !== 'number' || isNaN(id) || !Number.isInteger(id) || id <= 0)
+        return { id: 'invalid_id', message: 'id must be a whole positive number' };
 
     // first_name was not included in the request body
     if (!first_name)
         return { id: 'missing_first_name', message: 'first_name is required' };
-    // first_name must be a string, not a number or boolean
-    if (typeof first_name !== 'string')
-        return { id: 'invalid_first_name', message: 'first_name must be a string' };
-    // first_name must contain at least one non-whitespace character
-    if (first_name.trim() === '')
-        return { id: 'invalid_first_name', message: 'first_name cannot be empty' };
+    // first_name must be a non-empty string
+    if(typeof first_name !== 'string' || first_name.trim() === '')
+        return { id: 'invalid_first_name', message: 'first_name must be a non-empty string' };
 
     // last_name was not included in the request body
     if (!last_name)
         return { id: 'missing_last_name', message: 'last_name is required' };
-    // last_name must be a string, not a number or boolean
-    if (typeof last_name !== 'string')
-        return { id: 'invalid_last_name', message: 'last_name must be a string' };
-    // last_name must contain at least one non-whitespace character
-    if (last_name.trim() === '')
-        return { id: 'invalid_last_name', message: 'last_name cannot be empty' };
+    // last_name must be a non-empty string
+    if(typeof last_name !== 'string' || last_name.trim() === '')
+        return { id: 'invalid_last_name', message: 'last_name must be a non-empty string' };
 
     // birthday was not included in the request body
     if (!birthday)
         return { id: 'missing_birthday', message: 'birthday is required' };
-    // birthday must be a string, not a raw number or object
-    if (typeof birthday !== 'string')
-        return { id: 'invalid_birthday', message: 'birthday must be a string' };
-    // birthday string must be parseable into a real calendar date
-    if (isNaN(new Date(birthday).getTime()))
-        return { id: 'invalid_birthday', message: 'birthday must be a valid date' };
+    // birthday must be a valid date string
+    if(typeof birthday !== 'string' || isNaN(new Date(birthday).getTime()))
+        return { id: 'invalid_birthday', message: 'birthday must be a valid date string' };
     // birthday must be in the past — future dates are not valid birthdays
     if (new Date(birthday) > new Date())
         return { id: 'invalid_birthday', message: 'birthday must be in the past' };
 
     return null;
-};
+}
 
 /**
  * POST /api/add

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Log = require('../models/logs');
+const Log = require('../models/log.model');
 
 /**
  * GET /api/logs

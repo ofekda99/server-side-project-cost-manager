@@ -10,7 +10,7 @@ jest.mock('mongoose', () => ({
 }));
 
 // Mock the Log model to prevent real DB writes during tests
-jest.mock('../models/logs', () => ({
+jest.mock('../models/log.model', () => ({
     create: jest.fn().mockResolvedValue()
 }));
 
@@ -19,7 +19,7 @@ jest.mock('../models/logs', () => ({
 const mockUsersFind = jest.fn().mockReturnValue({ select: jest.fn().mockResolvedValue([]) });
 const mockUsersFindOne = jest.fn().mockResolvedValue(null);
 const mockUsersCreate = jest.fn().mockResolvedValue({});
-jest.mock('../models/users', () => ({
+jest.mock('../models/user.model', () => ({
     find: mockUsersFind,
     findOne: mockUsersFindOne,
     create: mockUsersCreate
@@ -27,7 +27,7 @@ jest.mock('../models/users', () => ({
 
 // Mock the Costs model — default: no costs, total returns 0
 const mockCostsAggregate = jest.fn().mockResolvedValue([]);
-jest.mock('../models/costs', () => ({
+jest.mock('../models/cost.model', () => ({
     aggregate: mockCostsAggregate
 }));
 

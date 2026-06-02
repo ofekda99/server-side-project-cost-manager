@@ -10,7 +10,7 @@ jest.mock('mongoose', () => ({
 }));
 
 // Mock the Log model to prevent real DB writes during tests
-jest.mock('../models/logs', () => ({
+jest.mock('../models/log.model', () => ({
     create: jest.fn().mockResolvedValue()
 }));
 

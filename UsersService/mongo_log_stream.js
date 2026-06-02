@@ -1,4 +1,4 @@
-const LogEntry = require('./models/logs');
+const LogEntry = require('./models/log.model');
 
 /**
  * A writable stream destination for Pino.

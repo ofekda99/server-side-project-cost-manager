@@ -14,13 +14,13 @@ jest.mock('mongoose', () => ({
 }));
 
 // Mock the logs model so no log documents are written during tests
-jest.mock('../models/logs', () => ({
+jest.mock('../models/log.model', () => ({
     create: jest.fn().mockResolvedValue()
 }));
 
 // Mock the users model — default: user does not exist (findOne returns null)
 const mockUserFindOne = jest.fn().mockResolvedValue(null);
-jest.mock('../models/users', () => ({
+jest.mock('../models/user.model', () => ({
     findOne: mockUserFindOne
 }));
 
@@ -34,7 +34,7 @@ const mockCostsCreate = jest.fn().mockResolvedValue({
     date: new Date()
 });
 const mockCostsFind = jest.fn().mockResolvedValue([]);
-jest.mock('../models/costs', () => ({
+jest.mock('../models/cost.model', () => ({
     create: mockCostsCreate,
     find: mockCostsFind
 }));
@@ -42,7 +42,7 @@ jest.mock('../models/costs', () => ({
 // Mock the reports model — default: no cached report, create succeeds
 const mockReportFindOne = jest.fn().mockResolvedValue(null);
 const mockReportCreate = jest.fn().mockResolvedValue({});
-jest.mock('../models/reports', () => ({
+jest.mock('../models/report.model', () => ({
     findOne: mockReportFindOne,
     create: mockReportCreate
 }));
@@ -217,13 +217,21 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_sum');
     });
 
-    it('should return invalid_sum when sum is zero or negative', async () => {
+    it('should return invalid_sum when sum is negative', async () => {
         const res = await request(app)
             .post('/api/add')
             .send({ description: 'lunch', category: 'food', userid: 123123, sum: -10 });
 
         expect(res.status).toBe(400);
         expect(res.body.id).toBe('invalid_sum');
+    });
+
+    it('should accept sum of zero', async () => {
+        const res = await request(app)
+            .post('/api/add')
+            .send({ description: 'lunch', category: 'food', userid: 123123, sum: 0 });
+
+        expect(res.status).toBe(201);
     });
 
     it('should return invalid_date when date is not a string', async () => {

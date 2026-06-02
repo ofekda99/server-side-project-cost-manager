@@ -20,7 +20,7 @@ jest.mock('../mongo_log_stream', () => {
 const mockLogFind = jest.fn().mockReturnValue({
     sort: jest.fn().mockReturnValue({ select: jest.fn().mockResolvedValue([]) })
 });
-jest.mock('../models/logs', () => ({
+jest.mock('../models/log.model', () => ({
     find: mockLogFind
 }));
 
