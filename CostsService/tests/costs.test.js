@@ -99,6 +99,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('missing_description');
     });
 
+    // category was not included in the request body
     it('should return missing_category when category is absent', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -108,6 +109,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('missing_category');
     });
 
+    // userid was not included in the request body
     it('should return missing_userid when userid is absent', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -117,6 +119,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('missing_userid');
     });
 
+    // sum was not included in the request body
     it('should return missing_sum when sum is absent', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -136,6 +139,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_description');
     });
 
+    // description sent as whitespace only — must contain real text
     it('should return invalid_description when description is an empty string', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -145,6 +149,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_description');
     });
 
+    // category sent as a number — must be a string
     it('should return invalid_category when category is not a string', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -154,6 +159,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_category');
     });
 
+    // category value not in the allowed list
     it('should return invalid_category when category is not one of the allowed values', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -163,6 +169,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_category');
     });
 
+    // userid sent as a string — must be a number
     it('should return invalid_userid when userid is not a number', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -172,6 +179,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_userid');
     });
 
+    // userid sent as NaN — must be a valid number
     it('should return invalid_userid when userid is NaN', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -181,6 +189,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_userid');
     });
 
+    // userid sent as a decimal — must be a whole number
     it('should return invalid_userid when userid is a decimal', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -190,6 +199,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_userid');
     });
 
+    // userid sent as negative — must be a positive number
     it('should return invalid_userid when userid is negative', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -199,6 +209,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_userid');
     });
 
+    // sum sent as a string — must be a number
     it('should return invalid_sum when sum is not a number', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -208,6 +219,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_sum');
     });
 
+    // sum sent as NaN — must be a valid number
     it('should return invalid_sum when sum is NaN', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -217,6 +229,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_sum');
     });
 
+    // sum sent as negative — must be a non-negative number
     it('should return invalid_sum when sum is negative', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -226,6 +239,7 @@ describe('POST /api/add', () => {
         expect(res.body.id).toBe('invalid_sum');
     });
 
+    // Boundary value — sum of zero is valid and should be accepted
     it('should accept sum of zero', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -234,6 +248,7 @@ describe('POST /api/add', () => {
         expect(res.status).toBe(201);
     });
 
+    // date type validation — date must be a string, not a number
     it('should return invalid_date when date is not a string', async () => {
         const res = await request(app)
             .post('/api/add')
@@ -339,6 +354,7 @@ describe('GET /api/report', () => {
         expect(res.body.id).toBe('missing_id');
     });
 
+    // year was not included in the query string
     it('should return missing_year when year is absent', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -348,6 +364,7 @@ describe('GET /api/report', () => {
         expect(res.body.id).toBe('missing_year');
     });
 
+    // month was not included in the query string
     it('should return missing_month when month is absent', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -367,6 +384,7 @@ describe('GET /api/report', () => {
         expect(res.body.id).toBe('invalid_id');
     });
 
+    // id sent as a decimal — must be a whole number
     it('should return invalid_id when id is a decimal', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -376,6 +394,7 @@ describe('GET /api/report', () => {
         expect(res.body.id).toBe('invalid_id');
     });
 
+    // id sent as negative — must be a positive number
     it('should return invalid_id when id is negative', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -385,6 +404,7 @@ describe('GET /api/report', () => {
         expect(res.body.id).toBe('invalid_id');
     });
 
+    // year sent as a string — must be a number
     it('should return invalid_year when year is not a number', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -394,6 +414,7 @@ describe('GET /api/report', () => {
         expect(res.body.id).toBe('invalid_year');
     });
 
+    // year sent as a decimal — must be a whole number
     it('should return invalid_year when year is a decimal', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -403,6 +424,7 @@ describe('GET /api/report', () => {
         expect(res.body.id).toBe('invalid_year');
     });
 
+    // year sent as negative — must be a positive number
     it('should return invalid_year when year is negative', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -412,6 +434,7 @@ describe('GET /api/report', () => {
         expect(res.body.id).toBe('invalid_year');
     });
 
+    // month sent as a string — must be a number
     it('should return invalid_month when month is not a number', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -421,6 +444,7 @@ describe('GET /api/report', () => {
         expect(res.body.id).toBe('invalid_month');
     });
 
+    // month sent as a decimal — must be a whole number
     it('should return invalid_month when month is a decimal', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -440,6 +464,7 @@ describe('GET /api/report', () => {
         expect(res.body.id).toBe('invalid_month');
     });
 
+    // month above 12 — must be between 1 and 12
     it('should return invalid_month when month is above 12', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -470,6 +495,7 @@ describe('GET /api/report', () => {
         expect(Array.isArray(res.body.costs)).toBe(true);
     });
 
+    // There are exactly 5 required categories
     it('should return exactly 5 category groups in costs', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -478,6 +504,7 @@ describe('GET /api/report', () => {
         expect(res.body.costs).toHaveLength(5);
     });
 
+    // All 5 category names must be present in the response
     it('should include all 5 required categories in the costs array', async () => {
         const res = await request(app)
             .get('/api/report')
@@ -501,6 +528,7 @@ describe('GET /api/report', () => {
         expect(res.body.userid).toBe(123123);
     });
 
+    // Both year and month in the response must match the requested values
     it('should return the correct year and month in the response', async () => {
         const res = await request(app)
             .get('/api/report')
