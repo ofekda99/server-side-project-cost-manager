@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 /**
- * Minimal User schema used by CostsService to validate that a userid exists.
- * The full user management is handled by UsersService.
+ * Schema for a user document stored in the users collection.
+ * The id field is a custom numeric identifier, separate from MongoDB's _id.
  */
 const userSchema = new mongoose.Schema({
     id: { type: Number, required: true, unique: true },
